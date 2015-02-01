@@ -1,0 +1,5 @@
+coord: localhost:2181/
+timeout: 300000
+num-stripes: 1
+idletime: 300000
+max-resource: 30
