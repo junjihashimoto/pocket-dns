@@ -65,10 +65,13 @@ handleRequest pconf conf conn rc req n = do
         case mq of
           Just q -> do
             val <- getRecord pconf (qname q) conn
+            -- print $ q
+            -- print $ qname q
+            -- print $ val
             let len = length val
             if len /= 0
               then 
-                case (val !! (n `div` len)) of
+                case (val !! (n `mod` len)) of
                   IPv4 ip -> return $ Just $ responseA ident q ip
                   IPv6 ip -> return $ Just $ responseAAAA ident q ip
               else

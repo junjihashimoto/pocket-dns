@@ -81,7 +81,10 @@ test-suite test
 
     build-depends: base
                  , pocket-dns
+                 , transformers
                  , hspec
                  , hspec-contrib
-                 , transformers
+                 , test-sandbox
+                 , hspec-test-sandbox
+                 , cabal-test-bin
     Default-Language:   Haskell2010
