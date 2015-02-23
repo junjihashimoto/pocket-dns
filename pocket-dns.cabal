@@ -27,10 +27,26 @@ source-repository head
   location:       https://github.com/junjihashimoto/pocket-dns.git
 
 library
-  -- exposed-modules:     
+  exposed-modules:     Network.DNS.Pocket
+                     , Network.DNS.Pocket.Type
+                     , Network.DNS.Pocket.Server
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.6 && <5
+  build-depends:       base >=4 && <5
+                      ,dns
+                      ,network
+                      ,persistent-zookeeper
+                      ,persistent-sqlite
+                      ,persistent-template
+                      ,persistent
+                      ,optparse-applicative
+                      ,bytestring
+                      ,yaml
+                      ,iproute
+                      ,data-default
+                      ,text
+                      ,monad-control
+                      ,transformers
   -- hs-source-dirs:      
   default-language:    Haskell2010
 
@@ -38,13 +54,22 @@ executable pocket-dns
   main-is: Main.hs            
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.6 && <4.7
+  build-depends:       base >=4 && <5
                       ,dns
                       ,network
                       ,persistent-zookeeper
+                      ,persistent-sqlite
                       ,persistent-template
                       ,persistent
                       ,optparse-applicative
+                      ,text
+                      ,shelly
+                      ,http-conduit
+                      ,bytestring
+                      ,data-default
+                      ,iproute
+                      ,yaml
+                      ,monad-control
   -- hs-source-dirs:      
   default-language:    Haskell2010
 
@@ -55,7 +80,7 @@ test-suite test
     ghc-options:       -Wall
 
     build-depends: base
-                 , peacock
+                 , pocket-dns
                  , hspec
                  , hspec-contrib
                  , transformers

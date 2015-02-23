@@ -3,13 +3,14 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE RecordWildCards, OverloadedStrings #-}
-
+{-# LANGUAGE FlexibleContexts #-}
 
 module Network.DNS.Pocket.Type where
 import Control.Applicative
 import Control.Concurrent
 import Control.Monad
-import qualified Data.ByteString as S
+import Control.Monad.Trans.Control
+import qualified Data.ByteString as B
 import Data.ByteString.Lazy hiding (putStrLn, filter, length)
 import Data.Default
 import Data.IP
@@ -22,112 +23,48 @@ import Network.Socket.ByteString
 import System.Timeout
 import System.Environment
 import Database.Persist
-import Database.Persist.Zookeeper
+--import Database.Persist.Sqlite
 import Database.Persist.TH
+-- import Database.Persist
+-- import Database.Persist.Sql
+-- import Database.Persist.Zookeeper
+import Database.Persist.TH
+import Data.IP
 import qualified Data.Yaml as Y
+import Database.Persist.Sqlite (SqliteConf)
+import Database.Persist.Zookeeper (ZookeeperConf)
 
-let zookeeperSettings = defaultZookeeperSettings
-  in share [mkPersist zookeeperSettings] [persistLowerCase|
-DnsRecord
-    name Domain
-    addr [Int]
-    DnsRecordU name
-    deriving Show
-    deriving Eq
-|]
 
-zookeeperConf :: ZookeeperConf
-zookeeperConf = ZookeeperConf "localhost:2181" 10000 1 50 30
+instance PersistField IP where
+  toPersistValue (IPv4 ip) = toPersistValue $ fromIPv4 ip
+  toPersistValue (IPv6 ip) = toPersistValue $ fromIPv6 ip
+  fromPersistValue value = do
+    v <- fromPersistValue value
+    if length v == 4
+      then return $ IPv4 $ toIPv4 $ v
+      else return $ IPv6 $ toIPv6 $ v
 
-data Conf = Conf {
+data DnsConf = DnsConf {
     bufSize :: Int
   , timeOut :: Int
 }
 
-instance Default Conf where
-    def = Conf {
+instance Default DnsConf where
+    def = DnsConf {
         bufSize = 512
       , timeOut = 3 * 1000 * 1000
     }
 
-timeout' :: String -> Int -> IO a -> IO (Maybe a)
-timeout' msg tm io = do
-    result <- timeout tm io
-    maybe (putStrLn msg) (const $ return ()) result
-    return result
+class DnsBackend p where
+  type Conn p
+  load :: FilePath -> IO (Maybe p)
+  setup :: p -> IO (Maybe (Conn p))
+  getRecord :: p -> Domain -> Conn p -> IO [IP]
+  setRecord :: p -> Domain -> [IP] -> Conn p -> IO Bool
+  deleteRecord :: p -> Domain -> Conn p -> IO ()
+  listRecord :: p -> Conn p -> IO [(Domain,[IP])]
 
-proxyRequest :: Conf -> ResolvConf -> DNSFormat -> IO (Maybe DNSFormat)
-proxyRequest Conf{..} rc req = do
-    let worker Resolver{..} = do
-            let packet = mconcat . toChunks $ encode req
-            sendAll dnsSock packet
-            receive dnsSock
-    rs <- makeResolvSeed rc
-    withResolver rs $ \r ->
-        (>>= check) <$> timeout' "proxy timeout" timeOut (worker r)
-  where
-    ident = identifier . header $ req
-    check :: DNSFormat -> Maybe DNSFormat
-    check rsp = let hdr = header rsp
-                in  if identifier hdr == ident
-                        then Just rsp
-                        else Nothing
 
-handleRequest :: Conf -> Connection -> ResolvConf -> DNSFormat -> IO (Maybe DNSFormat)
-handleRequest conf conn rc req = do
-  mr <- lookupHosts
-  case mr of
-    Just _ -> return mr
-    Nothing -> proxyRequest conf rc req
-  where
-    filterA = filter ((==A) . qtype)
-    ident = identifier . header $ req
-    lookupHosts :: IO (Maybe DNSFormat)
-    lookupHosts = do
-        let mq = listToMaybe . filterA . question $ req
-        case mq of
-          Just q -> do
-            mRecord <- flip runZookeeperPool conn $ getBy (DnsRecordU (qname q))
-            case mRecord of
-              Just (Entity _key val) ->
-                return $ Just $ responseA ident q $ toIPv4 $ dnsRecordAddr val
-              Nothing ->
-                return Nothing
-          Nothing -> return Nothing
-
-handlePacket :: Conf -> Connection -> Socket -> SockAddr -> S.ByteString -> IO ()
-handlePacket conf@Conf{..} conn sock addr bs = case decode (fromChunks [bs]) of
-    Right req -> do
-        let rc = defaultResolvConf { resolvInfo = RCFilePath "/etc/resolv.conf" }
-        mrsp <- handleRequest conf conn rc req
-        case mrsp of
-            Just rsp ->
-                let packet = mconcat . toChunks $ encode rsp
-                in void $ timeout' "send timeout" timeOut (sendAllTo sock packet addr)
-            Nothing -> return ()
-    Left msg -> putStrLn msg
-
-main :: IO ()
-main = do
-  arg <- getArgs
-  (Just conf) <- 
-    case arg of
-      [] -> Y.decodeFile "/etc/peacock/zookeeper.yml"
-      (c:_) -> Y.decodeFile c
-
-runServer :: FilePath -> IO ()
-runServer conf | Just conf <- Y.decodeFile "/etc/peacock/zookeeper.yml" = do
-  conf' <- Y.parseMonad Database.Persist.loadConfig conf
-  withSocketsDo $
-    withZookeeperPool conf' $ \conn -> do
-      let conf = def
-      addrinfos <- getAddrInfo
-                     (Just (defaultHints {addrFlags = [AI_PASSIVE]}))
-                     Nothing (Just "domain")
-      addrinfo <- maybe (fail "no addr info") return (listToMaybe addrinfos)
-      sock <- socket (addrFamily addrinfo) Datagram defaultProtocol
-      bindSocket sock (addrAddress addrinfo)
-      forever $ do
-          (bs, addr) <- recvFrom sock (bufSize conf)
-          forkIO $ handlePacket conf conn sock addr bs
-runServer _ = error "Can not parse "
+data Conf =
+    Zookeeper ZookeeperConf
+  | Sqlite SqliteConf
