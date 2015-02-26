@@ -57,4 +57,3 @@ instance DnsBackend ZookeeperConf where
     return $ map (\(Entity _key val) -> (dnsRecordName val,dnsRecordAddr val)) a
   deleteRecord p q conn = do
     runPool p (deleteBy (DnsRecordU q)) conn
-

@@ -6,34 +6,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module Network.DNS.Pocket.Type where
-import Control.Applicative
-import Control.Concurrent
-import Control.Monad
-import Control.Monad.Trans.Control
-import qualified Data.ByteString as B
-import Data.ByteString.Lazy hiding (putStrLn, filter, length)
 import Data.Default
 import Data.IP
-import Data.Maybe
-import Data.Monoid
-import Network.BSD
 import Network.DNS hiding (lookup)
-import Network.Socket hiding (recvFrom)
-import Network.Socket.ByteString
-import System.Timeout
-import System.Environment
 import Database.Persist
---import Database.Persist.Sqlite
-import Database.Persist.TH
--- import Database.Persist
--- import Database.Persist.Sql
--- import Database.Persist.Zookeeper
-import Database.Persist.TH
-import Data.IP
-import qualified Data.Yaml as Y
 import Database.Persist.Sqlite (SqliteConf)
 import Database.Persist.Zookeeper (ZookeeperConf)
-
 
 instance PersistField IP where
   toPersistValue (IPv4 ip) = toPersistValue $ fromIPv4 ip

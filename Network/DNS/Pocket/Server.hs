@@ -5,6 +5,7 @@
 {-# LANGUAGE RecordWildCards, OverloadedStrings #-}
 
 module Network.DNS.Pocket.Server where
+
 import Control.Applicative
 import Control.Concurrent
 import Control.Monad
@@ -140,6 +141,7 @@ loadConf yamlConfFile = do
           v <- load yamlConfFile :: IO (Maybe SqliteConf)
           return $ fmap Sqlite v
         _ -> return Nothing
+    _ -> return Nothing
         
 runServer :: FilePath -> Port -> IO ()
 runServer file port = do
@@ -159,11 +161,11 @@ setDomain file domain ips = do
     Nothing -> error "Can not parse config-file"
   where
     setDomain' :: DnsBackend c => c -> Domain -> [IP] -> IO Bool
-    setDomain' conf domain ips = do
+    setDomain' conf domain' ips' = do
       withSocketsDo $ do
         mconn <- setup conf
         case mconn of
-          Just conn -> setRecord conf domain ips conn
+          Just conn -> setRecord conf domain' ips' conn
           Nothing -> error "Setup failure"
 
 getDomain :: FilePath -> Domain -> IO [IP]
@@ -175,11 +177,11 @@ getDomain file domain = do
     Nothing -> error "Can not parse config-file"
   where
     getDomain' :: DnsBackend c => c -> Domain -> IO [IP]
-    getDomain' conf domain = do
+    getDomain' conf domain' = do
       withSocketsDo $ do
         mconn <- setup conf
         case mconn of
-          Just conn -> getRecord conf domain conn
+          Just conn -> getRecord conf domain' conn
           Nothing -> error "Setup failure"
 
 deleteDomain :: FilePath -> Domain -> IO ()
@@ -191,13 +193,12 @@ deleteDomain file domain = do
     Nothing -> error "Can not parse config-file"
   where
     deleteDomain' :: DnsBackend c => c -> Domain -> IO ()
-    deleteDomain' conf domain = do
+    deleteDomain' conf domain' = do
       withSocketsDo $ do
         mconn <- setup conf
         case mconn of
-          Just conn -> deleteRecord conf domain conn
+          Just conn -> deleteRecord conf domain' conn
           Nothing -> error "Setup failure"
-
 
 listDomain :: FilePath -> IO [(Domain,[IP])]
 listDomain file = do
@@ -214,4 +215,3 @@ listDomain file = do
         case mconn of
           Just conn -> listRecord conf conn
           Nothing -> error "Setup failure"
-

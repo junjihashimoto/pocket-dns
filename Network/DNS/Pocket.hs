@@ -1,8 +1,12 @@
 module Network.DNS.Pocket (
-  module Network.DNS.Pocket.Type
-, module Network.DNS.Pocket.Server
+  Port
+, runServer
+, setDomain
+, getDomain
+, deleteDomain
+, listDomain
   )
 where
 
-import Network.DNS.Pocket.Type
+--import Network.DNS.Pocket.Type
 import Network.DNS.Pocket.Server
