@@ -14,6 +14,9 @@ import Data.Default
 import Data.IP
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Aeson as A
+import qualified Data.Yaml as Y
+import qualified Data.HashMap.Strict as H
 import Network.BSD
 import Network.DNS hiding (lookup)
 import Network.Socket hiding (recvFrom)
@@ -125,15 +128,19 @@ runServer' conf port = do
 
 loadConf :: FilePath -> IO (Maybe Conf)
 loadConf yamlConfFile = do
-  mconf <- load yamlConfFile :: IO (Maybe ZookeeperConf)
+  mconf <- Y.decodeFile yamlConfFile :: IO (Maybe Y.Value)
   case mconf of
-    Just conf -> return $ Just $ Zookeeper conf
-    Nothing -> do
-      mconf <- load yamlConfFile :: IO (Maybe SqliteConf)
-      case mconf of
-        Just conf -> return $ Just $ Sqlite conf
-        Nothing -> return Nothing 
-
+    Just (Y.Object obj) -> do
+--      let obj' = Y.encode $ Y.Object $ H.delete "backend" obj
+      case H.lookup "backend" obj of
+        Just (A.String "zookeeper") -> do
+          v <- load yamlConfFile :: IO (Maybe ZookeeperConf)
+          return $ fmap Zookeeper v
+        Just (A.String "sqlite") -> do
+          v <- load yamlConfFile :: IO (Maybe SqliteConf)
+          return $ fmap Sqlite v
+        _ -> return Nothing
+        
 runServer :: FilePath -> Port -> IO ()
 runServer file port = do
   mconf <- loadConf file

@@ -1,0 +1,35 @@
+zookeeper:
+  cmd: '/usr/share/zookeeper/bin/zkServer.sh'
+  args:
+    - 'start-foreground'
+    - '{{zookeeper_conf_conf}}'
+  tempfiles: []
+  confs:
+    conf: |
+      dataDir={{zookeeper_dir_data}}
+      clientPort={{zookeeper_port_2181}}
+      maxClientCnxns=1000
+  dirs:
+    - 'data'
+  ports:
+    - '2181'
+pdns:
+  cmd: 'dist/build/pocket-dns/pocket-dns'
+  args:
+    - 'daemon'
+    - '--conf'
+    - '{{pdns_conf_conf}}'
+    - '--port'
+    - '{{pdns_port_53}}'
+  tempfiles: []
+  confs:
+    conf: |
+      backend: zookeeper
+      coord: localhost:{{zookeeper_port_2181}}/
+      timeout: 300000
+      num-stripes: 1
+      idletime: 300000
+      max-resource: 30
+  dirs: []
+  ports:
+    - '53'

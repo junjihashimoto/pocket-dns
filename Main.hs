@@ -5,14 +5,9 @@
 --import Prelude hiding (FilePath)
 import Network.DNS.Pocket
 import Options.Applicative
-
-import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.Text as T
-import Shelly hiding (command,run,FilePath,get)
-import Network.HTTP.Conduit
 import Control.Monad
-import Control.Concurrent
 import System.Exit
 
 default (T.Text)
@@ -27,27 +22,27 @@ data Command
 
 set :: Parser Command
 set = Set
-      <$> option auto (long "conf" <> value "conf.yml" <> metavar "CONFILE")
+      <$> option str (long "conf" <> value "conf.yml" <> metavar "CONFILE")
       <*> (argument str (metavar "DOMAIN"))
       <*> many (argument str (metavar "IP..."))
 
 get :: Parser Command
 get = Get
-      <$> option auto (long "conf" <> value "conf.yml" <> metavar "CONFILE")
+      <$> option str (long "conf" <> value "conf.yml" <> metavar "CONFILE")
       <*> (argument str (metavar "DOMAIN"))
 
 list :: Parser Command
 list = List
-       <$> option auto (long "conf" <> value "conf.yml" <> metavar "CONFILE")
+       <$> option str (long "conf" <> value "conf.yml" <> metavar "CONFILE")
 
 delete :: Parser Command
 delete = Delete
-         <$> option auto (long "conf" <> value "conf.yml" <> metavar "CONFILE")
+         <$> option str (long "conf" <> value "conf.yml" <> metavar "CONFILE")
          <*> (argument str (metavar "DOMAIN"))
 
 daemon :: Parser Command
 daemon = Daemon
-         <$> option auto (long "conf" <> value "conf.yml" <> metavar "CONFILE")
+         <$> option str (long "conf" <> value "conf.yml" <> metavar "CONFILE")
          <*> option auto (long "port" <> value 53 <> metavar "PORT")
 
 parse :: Parser Command
@@ -66,7 +61,7 @@ runCmd (Set conf domain ips) = do
     then print "OK"
     else do
       print "Failed"
-      exitWith $ ExitFailure 0
+      exitWith $ ExitFailure 1
 
 runCmd (Get conf domain) = do
   v <- getDomain conf $ B8.pack domain

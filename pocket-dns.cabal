@@ -3,8 +3,8 @@
 
 name:                pocket-dns
 version:             0.1.0
-synopsis:            Simple And Portable DNS Server
--- description:         
+synopsis:            Multi-backend (zookeeper and sqlite) DNS Server using persistent-library
+description:         Multi-backend (zookeeper and sqlite) DNS Server using persistent-library
 license:             BSD3
 license-file:        LICENSE
 author:              Junji Hashimoto
@@ -30,6 +30,8 @@ library
   exposed-modules:     Network.DNS.Pocket
                      , Network.DNS.Pocket.Type
                      , Network.DNS.Pocket.Server
+                     , Network.DNS.Pocket.Sqlite
+                     , Network.DNS.Pocket.Zookeeper
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base >=4 && <5
@@ -47,7 +49,10 @@ library
                       ,text
                       ,monad-control
                       ,transformers
+                      ,aeson
+                      ,unordered-containers
   -- hs-source-dirs:      
+  ghc-options:       -Wall -O2
   default-language:    Haskell2010
 
 executable pocket-dns
@@ -70,7 +75,10 @@ executable pocket-dns
                       ,iproute
                       ,yaml
                       ,monad-control
+                      ,unordered-containers
+                      ,aeson
   -- hs-source-dirs:      
+  ghc-options:       -Wall -threaded -rtsopts -with-rtsopts=-N -O2
   default-language:    Haskell2010
 
 test-suite test
@@ -84,7 +92,10 @@ test-suite test
                  , transformers
                  , hspec
                  , hspec-contrib
+                 , hspec-server
                  , test-sandbox
                  , hspec-test-sandbox
                  , cabal-test-bin
+                 , shakespeare
+                 , text
     Default-Language:   Haskell2010

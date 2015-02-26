@@ -1,0 +1,3 @@
+backend: sqlite
+database: pocket-dns.sqlite3
+poolsize: 10

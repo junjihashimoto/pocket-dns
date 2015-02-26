@@ -1,0 +1,12 @@
+language: haskell
+
+install:
+  - sudo add-apt-repository -y ppa:yandex-sysmon/zookeeper-3.4
+  - sudo apt-get update
+  - sudo apt-get install libzookeeper-mt-dev zookeeperd libsqlite3-dev
+  - cabal update
+  - cabal install -j --only-dep --enable-tests --force-reinstalls
+
+script:
+  - cabal configure --enable-tests && cabal build && cabal test
+

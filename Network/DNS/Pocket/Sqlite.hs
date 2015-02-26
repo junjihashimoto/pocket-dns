@@ -37,6 +37,7 @@ instance DnsBackend SqliteConf where
   setup p = do
     withSocketsDo $ do
       conn <- createPoolConfig p
+      runPool p (runMigration migrateAll) conn
       return $ Just conn
   getRecord p domain conn = do
     mRecord <- runPool p (getBy (DnsRecordU domain)) conn
