@@ -1,6 +1,6 @@
 # PocketDNS: Multi-backend (zookeeper and sqlite) DNS Server using persistent-library
 
-[![Hackage version](https://img.shields.io/hackage/v/pocket-dns.svg?style=flat)](https://hackage.haskell.org/package/pocket-dns)  [![Build Status](https://travis-ci.org/junjihashimoto/pocket-dns.png?branch=master)](https://travis-ci.org/junjihashimoto/pocket-dns) [![Coverage Status](https://coveralls.io/repos/junjihashimoto/pocket-dns/badge.png)](https://coveralls.io/r/junjihashimoto/pocket-dns)
+[![Hackage version](https://img.shields.io/hackage/v/pocket-dns.svg?style=flat)](https://hackage.haskell.org/package/pocket-dns)  [![Build Status](https://travis-ci.org/junjihashimoto/pocket-dns.png?branch=master)](https://travis-ci.org/junjihashimoto/pocket-dns)
 
 PocketDNS is multi-backend (zookeeper and sqlite) DNS Server using persistent-library.
 
